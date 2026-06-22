@@ -2,7 +2,7 @@
   "name": "friday",
   "version": "0.1.0",
   "description": "F.R.I.D.A.Y. — AI Intelligence Assistant",
-  "main": "dist/main/index.js",
+  "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

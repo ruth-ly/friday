@@ -7,23 +7,43 @@ import { useVoiceRecognition } from './hooks/useVoiceRecognition'
 
 export type AppState = 'idle' | 'listening' | 'thinking' | 'speaking'
 
-export default function App() {
-  const [appState, setAppState]       = useState<AppState>('idle')
-  const [transcript, setTranscript]   = useState('')
-  const [response, setResponse]       = useState<FridayResponse | null>(null)
-  const [trends, setTrends]           = useState<string[]>([])
-  const [bootText, setBootText]       = useState('INITIALIZING...')
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+function speak(text: string, onEnd?: () => void) {
+  speechSynthesis.cancel()
+  const utt = new SpeechSynthesisUtterance(text)
+  utt.rate   = 0.88
+  utt.pitch  = 1.08
+  utt.volume = 1
+  if (onEnd) utt.onend = onEnd
+  speechSynthesis.speak(utt)
+}
 
-  // Boot sequence greeting
+export default function App() {
+  const [appState, setAppState]     = useState<AppState>('idle')
+  const [transcript, setTranscript] = useState('')
+  const [response, setResponse]     = useState<FridayResponse | null>(null)
+  const [trends, setTrends]         = useState<string[]>([])
+  const [bootText, setBootText]     = useState('INITIALIZING...')
+  const [textInput, setTextInput]   = useState('')
+  const audioRef  = useRef<HTMLAudioElement | null>(null)
+  const inputRef  = useRef<HTMLInputElement | null>(null)
+
+  // Boot sequence + greeting
   useEffect(() => {
     const lines = ['SYSTEMS ONLINE', 'NEURAL LINK ACTIVE', 'READY']
     let i = 0
-    const t = setInterval(() => {
-      setBootText(lines[i++])
-      if (i >= lines.length) clearInterval(t)
-    }, 700)
-    return () => clearInterval(t)
+    const t = setInterval(() => { setBootText(lines[i++]); if (i >= lines.length) clearInterval(t) }, 700)
+
+    // Greet after boot
+    const greetTimer = setTimeout(() => {
+      const hour = new Date().getHours()
+      const time = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
+      const greeting = `Good ${time}, boss. F.R.I.D.A.Y. is online. All systems operational. How can I assist you?`
+      setResponse({ answer: greeting, sources: [], trending: [], audio_b64: null })
+      setAppState('speaking')
+      speak(greeting, () => setAppState('idle'))
+    }, 2500)
+
+    return () => { clearInterval(t); clearTimeout(greetTimer) }
   }, [])
 
   // Load trends every 5 min
@@ -40,7 +60,7 @@ export default function App() {
     return () => clearInterval(id)
   }, [])
 
-  const handleVoiceResult = useCallback(async (text: string) => {
+  const handleQuery = useCallback(async (text: string) => {
     setTranscript(text)
     setAppState('thinking')
     setResponse(null)
@@ -48,7 +68,6 @@ export default function App() {
     try {
       const result = await window.friday.ask(text, true)
       setResponse(result)
-
       if (result.trending?.length) setTrends(result.trending)
 
       if (result.audio_b64) {
@@ -56,59 +75,49 @@ export default function App() {
         audioRef.current = audio
         setAppState('speaking')
         audio.onended = () => setAppState('idle')
-        audio.onerror = () => setAppState('idle')
-        audio.play().catch(() => setAppState('idle'))
+        audio.onerror = () => { speak(result.answer, () => setAppState('idle')); setAppState('speaking') }
+        audio.play().catch(() => { speak(result.answer, () => setAppState('idle')); setAppState('speaking') })
       } else {
-        // Browser TTS fallback
-        const utt = new SpeechSynthesisUtterance(result.answer)
-        utt.rate = 0.88
-        utt.pitch = 1.1
-        utt.volume = 1
         setAppState('speaking')
-        utt.onend = () => setAppState('idle')
-        speechSynthesis.cancel()
-        speechSynthesis.speak(utt)
+        speak(result.answer, () => setAppState('idle'))
       }
     } catch {
-      setResponse({
-        answer: 'Connection error. Ensure the Friday server is running.',
-        sources: [],
-        trending: [],
-        audio_b64: null,
-      })
+      setResponse({ answer: 'Connection error. Ensure the Friday server is running.', sources: [], trending: [], audio_b64: null })
       setAppState('idle')
     }
   }, [])
 
   const { recognitionState, interimTranscript, startListening, stopListening } =
-    useVoiceRecognition(handleVoiceResult)
+    useVoiceRecognition(handleQuery)
 
   useEffect(() => {
     if (recognitionState === 'listening') setAppState('listening')
   }, [recognitionState])
 
   const handleOrbClick = () => {
-    if (appState === 'idle')      { startListening() }
-    else if (appState === 'listening') { stopListening() }
-    else if (appState === 'speaking') {
-      speechSynthesis.cancel()
-      audioRef.current?.pause()
-      setAppState('idle')
-    }
+    if (appState === 'idle')           startListening()
+    else if (appState === 'listening') stopListening()
+    else if (appState === 'speaking')  { speechSynthesis.cancel(); audioRef.current?.pause(); setAppState('idle') }
   }
 
+  const handleTextSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    const q = textInput.trim()
+    if (!q || appState !== 'idle') return
+    setTextInput('')
+    handleQuery(q)
+  }, [textInput, appState, handleQuery])
+
   const hintText: Record<AppState, string> = {
-    idle:      'TAP ORB TO SPEAK',
+    idle:      'TAP ORB TO SPEAK  —  OR TYPE BELOW',
     listening: interimTranscript || 'LISTENING...',
     thinking:  'ANALYZING SOURCES...',
-    speaking:  'FRIDAY SPEAKING — TAP TO STOP',
+    speaking:  'FRIDAY SPEAKING — TAP ORB TO STOP',
   }
 
   return (
     <div className="app">
       <div className="scanline" />
-
-      {/* Corner brackets */}
       <span className="corner tl" /><span className="corner tr" />
       <span className="corner bl" /><span className="corner br" />
 
@@ -142,6 +151,25 @@ export default function App() {
 
         <p className="orb-hint">{hintText[appState]}</p>
 
+        {/* ── Text input ── */}
+        <form className="cmd-form" onSubmit={handleTextSubmit}
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <input
+            ref={inputRef}
+            className="cmd-input"
+            type="text"
+            placeholder="Ask Friday anything..."
+            value={textInput}
+            onChange={e => setTextInput(e.target.value)}
+            disabled={appState !== 'idle'}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button className="cmd-btn" type="submit" disabled={appState !== 'idle' || !textInput.trim()}>
+            ▶
+          </button>
+        </form>
+
         {transcript && (
           <div className="transcript-panel">
             <div className="plabel">YOU</div>
@@ -160,7 +188,6 @@ export default function App() {
         )}
       </main>
 
-      {/* ── Trend ticker ── */}
       <TrendTicker trends={trends} />
     </div>
   )

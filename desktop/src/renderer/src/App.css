@@ -204,6 +204,45 @@
   line-height: 1.4;
 }
 
+/* ── Command input ──────────────────────────────────────────── */
+.cmd-form {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.cmd-input {
+  flex: 1;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--cyan);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  letter-spacing: .3px;
+}
+.cmd-input::placeholder { color: var(--text-dim); font-size: 12px; letter-spacing: .5px; }
+.cmd-input:focus { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,212,255,.2); }
+.cmd-input:disabled { opacity: .4; cursor: not-allowed; }
+
+.cmd-btn {
+  background: rgba(0,212,255,.08);
+  border: 1px solid var(--border);
+  color: var(--cyan);
+  font-size: 13px;
+  width: 34px; height: 34px;
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s;
+  flex-shrink: 0;
+}
+.cmd-btn:hover:not(:disabled) { background: rgba(0,212,255,.18); box-shadow: 0 0 8px rgba(0,212,255,.3); }
+.cmd-btn:disabled { opacity: .3; cursor: not-allowed; }
+
 /* ── Idle capability chips ──────────────────────────────────── */
 .idle-grid {
   display: flex;

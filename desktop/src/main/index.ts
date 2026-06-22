@@ -3,7 +3,6 @@ import {
   ipcMain, screen, session
 } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -48,7 +47,7 @@ function createWindow(): void {
     mainWindow?.hide()
   })
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+  if (process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
@@ -88,14 +87,12 @@ function createTray(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.friday.ai')
+  app.setAppUserModelId('com.friday.ai')
 
   // Grant microphone permission so Web Speech API works
   session.defaultSession.setPermissionRequestHandler((_, permission, cb) => {
     cb(permission === 'media' || permission === 'microphone')
   })
-
-  app.on('browser-window-created', (_, win) => optimizer.watchShortcuts(win))
 
   createWindow()
   createTray()
