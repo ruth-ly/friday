@@ -5,6 +5,7 @@ class QueryRequest(BaseModel):
     query: str
     max_sources: int = 10
     include_trends: bool = True
+    include_voice: bool = True
 
 
 class Source(BaseModel):
@@ -18,3 +19,4 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[Source]
     trending: list[str] = []
+    audio_b64: str | None = None

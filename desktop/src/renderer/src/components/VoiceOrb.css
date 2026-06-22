@@ -1,0 +1,117 @@
+/* ─── VoiceOrb ─────────────────────────────────────────────── */
+
+@keyframes breathe {
+  0%,100% { transform: scale(1);    opacity: .45; }
+  50%      { transform: scale(1.09); opacity: .85; }
+}
+@keyframes breathe-fast {
+  0%,100% { transform: scale(1);    opacity: .7; }
+  50%      { transform: scale(1.18); opacity: 1; }
+}
+@keyframes spin-cw  { to { transform: rotate(360deg);  } }
+@keyframes spin-ccw { to { transform: rotate(-360deg); } }
+@keyframes core-glow {
+  0%,100% { box-shadow: 0 0 18px #00d4ff, 0 0 36px rgba(0,212,255,.3); }
+  50%      { box-shadow: 0 0 32px #00d4ff, 0 0 64px rgba(0,212,255,.55); }
+}
+@keyframes bar-anim {
+  0%,100% { height: 6px; }
+  50%      { height: 30px; }
+}
+@keyframes think-spin { to { transform: rotate(360deg); } }
+
+/* ── Container ── */
+.orb-wrap {
+  position: relative;
+  width: 148px; height: 148px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── Rings ── */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(0,212,255,.2);
+  pointer-events: none;
+}
+.r1 { width: 96px;  height: 96px;  border-color: rgba(0,212,255,.5); }
+.r2 { width: 120px; height: 120px; border-color: rgba(0,212,255,.25); }
+.r3 { width: 148px; height: 148px; border-color: rgba(0,212,255,.1); }
+
+/* IDLE — slow breathing rings */
+.orb-idle .ring        { animation: breathe 3.2s ease-in-out infinite; }
+.orb-idle .r2          { animation-delay: .4s; }
+.orb-idle .r3          { animation-delay: .8s; }
+
+/* LISTENING — fast pulse + green tint */
+.orb-listening .r1 { border-color: rgba(0,255,136,.7); animation: breathe-fast .55s ease-in-out infinite; }
+.orb-listening .r2 { border-color: rgba(0,255,136,.35); animation: breathe-fast .55s ease-in-out infinite .15s; }
+.orb-listening .r3 { border-color: rgba(0,255,136,.15); animation: breathe-fast .55s ease-in-out infinite .3s; }
+
+/* THINKING — spinning dashed rings */
+.orb-thinking .r1 { border-style: dashed; border-color: rgba(255,107,53,.6); animation: spin-cw  1.4s linear infinite; }
+.orb-thinking .r2 { border-color: rgba(255,107,53,.2); animation: spin-ccw 2s   linear infinite; }
+.orb-thinking .r3 { border-color: rgba(255,107,53,.08); animation: none; }
+
+/* SPEAKING — steady strong pulse */
+.orb-speaking .r1 { border-color: rgba(0,212,255,.9); animation: breathe .9s ease-in-out infinite; }
+.orb-speaking .r2 { animation: breathe .9s ease-in-out infinite .2s; }
+.orb-speaking .r3 { animation: breathe .9s ease-in-out infinite .4s; }
+
+/* ── Core ── */
+.orb-core {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(0,130,180,.35), rgba(0,12,28,.95));
+  border: 2px solid rgba(0,212,255,.6);
+  display: flex; align-items: center; justify-content: center;
+  animation: core-glow 3s ease-in-out infinite;
+  transition: border-color .3s, box-shadow .3s;
+  position: relative;
+  z-index: 2;
+}
+.orb-listening .orb-core { border-color: #00ff88; box-shadow: 0 0 24px rgba(0,255,136,.5); animation: core-glow .7s ease-in-out infinite; }
+.orb-thinking  .orb-core { border-color: #ff6b35; box-shadow: 0 0 24px rgba(255,107,53,.4); animation: core-glow .4s ease-in-out infinite; }
+.orb-speaking  .orb-core { border-color: var(--cyan,#00d4ff); box-shadow: 0 0 36px rgba(0,212,255,.7); }
+
+/* ── Icons ── */
+.orb-icon { font-size: 28px; line-height: 1; }
+.idle-icon  { color: #00d4ff; text-shadow: 0 0 10px #00d4ff; }
+.speak-icon { color: #00d4ff; text-shadow: 0 0 14px #00d4ff; }
+
+/* ── Wave bars (listening) ── */
+.wave-bars {
+  display: flex; align-items: center; gap: 4px;
+  height: 36px;
+}
+.bar {
+  width: 5px; height: 6px;
+  background: #00ff88;
+  border-radius: 2px;
+  box-shadow: 0 0 5px #00ff88;
+  animation: bar-anim .6s ease-in-out infinite;
+}
+
+/* ── Thinking spinner ── */
+.think-spinner {
+  width: 30px; height: 30px;
+  border: 3px solid rgba(255,107,53,.15);
+  border-top-color: #ff6b35;
+  border-radius: 50%;
+  animation: think-spin .75s linear infinite;
+}
+
+/* ── Arc reactor outer ring ── */
+.arc-ring {
+  position: absolute;
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-top-color: rgba(255,107,53,.5);
+  border-bottom-color: rgba(0,212,255,.3);
+  animation: spin-cw 6s linear infinite;
+  pointer-events: none;
+}
